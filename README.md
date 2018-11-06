@@ -22,5 +22,5 @@ anndata
     -x,--tenXdir, data is from 10X. Only required to provide directory containing matrix.mtx, genes.tsv, barcodes.tsv files
 
 ## To run
-python3 netNMF.py -x path_to_10X_directory -d /n/fs/ragr-research/projects/scRNA/data/real_data/mESCs_Buettner/coexpressdb_correlation_analysis_data/Aug26 --network network.npy --netgenes netgenes.npy --normalize 1 -l 1 -D 10
+python3 netNMF.py -x path_to_10X_directory -d directory_to_save_data --network network.npy --netgenes netgenes.npy --normalize 1 -l 1 -D 10
 
