@@ -1,5 +1,5 @@
-# netNMF
-netNMF: A network regularization algorithm for dimensionality reduction and imputation of single-cell expression data
+# netNMF-sc
+netNMF-sc: A network regularization algorithm for dimensionality reduction and imputation of single-cell expression data
 
 ### Requires the following python libraries:
 tensorflow or tensorflow-gpu (if running on a machine with GPUs)
@@ -22,5 +22,5 @@ anndata
     -x,--tenXdir, data is from 10X. Only required to provide directory containing matrix.mtx, genes.tsv, barcodes.tsv files
 
 ## To run
-python3 netNMF.py -x path_to_10X_directory -d directory_to_save_data --network network.npy --netgenes netgenes.npy --normalize 1 -l 1 -D 10
+python3 netNMF-sc.py -x path_to_10X_directory -d directory_to_save_data --network network.npy --netgenes netgenes.npy --normalize 1 -l 1 -D 10
 
