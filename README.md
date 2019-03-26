@@ -1,26 +1,27 @@
 # netNMF-sc
-netNMF-sc: A network regularization algorithm for dimensionality reduction and imputation of single-cell expression data
+netNMF-sc: Leveraging gene-gene interactions for imputation and dimensionality reduction in single-cell expression analysis
+Preprint available at https://www.biorxiv.org/content/10.1101/544346v1
 
-### Requires the following python libraries:
-tensorflow or tensorflow-gpu (if running on a machine with GPUs)
-numpy
-scipy
-anndata
+## Instalation 
+netNMF-sc is installable through pip:
+pip3 install netNMFsc
 
-## Command line arguments
-    -f,--filename, path to data file (.npy or .mtx)
+Or by cloning this repository
+
+## Running netNMF-sc
+See netNMFsc_example.ipynb for a jupyter notebook tutorial for importing and running netNMF-sc. netNMF-sc can also be run from the command line using the following command:
+
+python3 -m netNMFsc.run_netNMF-sc -x <path_to_10X_directory> --network <network_npy_file> --netgenes <network_gene_names_npy_file> --dimensions <integer> --max_iters <integer> --direc <directory_to_save_output> --method GD
+
+### Command line arguments
+    -x,--tenXdir, data is from 10X. Only required to provide directory containing matrix.mtx, genes.tsv, barcodes.tsv files or .hdf5 file
     -g,--gene_names, path to file containing gene names (.npy or .tsv)
     -net,--network, path to network file (.npy or .mtx)
     -netgenes,--netgenes, path to file containing gene names for network (.npy or .tsv)
-    -n,--normalize, normalize data? 1 = yes, 0 = no,default=0
-    -sparse,--sparsity, sparsity for network,default=0.99
-    -mi,--max_iters, max iters for netNMF,default=1500)
-    -t,--tol, tolerence for netNMF,default=1e-4
+    -n,--normalize, normalize data? 1 = yes, 0 = no,default=1
+    -sparse,--sparsity, sparsity for network,default=0.75
+    -mi,--max_iters, max iters for netNMF,default=10000)
+    -t,--tol, tolerence for netNMF,default=1e-2
     -d,--direc, directory to save files
-    -D,--dimensions, number of dimensions to apply shift,default = 10
-    -l,--lambda_s, lambda param from NMF,default = 10
-    -x,--tenXdir, data is from 10X. Only required to provide directory containing matrix.mtx, genes.tsv, barcodes.tsv files
-
-## To run
-python3 netNMF-sc.py -x path_to_10X_directory -d directory_to_save_data --network network.npy --netgenes netgenes.npy --normalize 1 -l 1 -D 10
-
+    -D,--dimensions, number of latent dimension, default = 10
+    -a,--alpha, lambda parameter from NMF,default = 10
