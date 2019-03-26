@@ -11,7 +11,7 @@ Or by cloning this repository
 ## Running netNMF-sc
 See netNMFsc_example.ipynb for a jupyter notebook tutorial for importing and running netNMF-sc. netNMF-sc can also be run from the command line using the following command:
 
-python3 -m netNMFsc.run_netNMF-sc -x <path_to_10X_directory> --network <network_npy_file> --netgenes <network_gene_names_npy_file> --dimensions <integer> --max_iters <integer> --direc <directory_to_save_output> --method GD
+python3 -m netNMFsc.run_netNMF-sc -x <path_to_10X_directory> --network netNMFsc/refdata/coexpedia_network_human.mtx (or a network of your choice) --netgenes netNMFsc/refdata/coexpedia_gene_names_human.npy --dimensions <integer> --max_iters <integer> --direc <directory_to_save_output> --method GD
 
 ### Command line arguments
     -x,--tenXdir, data is from 10X. Only required to provide directory containing matrix.mtx, genes.tsv, barcodes.tsv files or .hdf5 file
