@@ -1,6 +1,7 @@
 # netNMF-sc
-netNMF-sc: Leveraging gene-gene interactions for imputation and dimensionality reduction in single-cell expression analysis
-Preprint available at https://www.biorxiv.org/content/10.1101/544346v1
+netNMF-sc: Leveraging gene-gene interactions for imputation and dimensionality reduction in single-cell expression analysis.
+
+Preprint is available at https://www.biorxiv.org/content/10.1101/544346v1
 
 ## Instalation 
 netNMF-sc is installable through pip:
