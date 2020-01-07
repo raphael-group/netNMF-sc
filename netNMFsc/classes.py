@@ -87,9 +87,9 @@ class netNMFGD:
 
         if self.distance == 'frobenius':
             cost0 = tf.reduce_sum(tf.pow(A - WH, 2))
-            costL = alpha_s * tf.trace(tf.matmul(tf.transpose(W),tf.matmul(L_s,W)))
+            costL = alpha_s * tf.linalg.trace(tf.matmul(tf.transpose(W),tf.matmul(L_s,W)))
         elif self.distance == 'KL':
-            cost0 = tf.reduce_sum(tf.multiply(A ,tf.log(tf.div(A,WH)))-A+WH)
+            cost0 = tf.reduce_sum(tf.multiply(A ,tf.math.log(tf.div(A,WH)))-A+WH)
             costL = alpha_s * tf.trace(tf.matmul(tf.transpose(W),tf.matmul(L_s,W)))
         else:
             raise ValueError('Select frobenius or KL for distance')
@@ -103,20 +103,20 @@ class netNMFGD:
         decay = 0.95
 
         global_step = tf.Variable(0, trainable=False)
-        increment_global_step = tf.assign(global_step, global_step + 1)
-        learning_rate = tf.train.exponential_decay(lr, global_step, self.max_iter, decay, staircase=True)
+        increment_global_step = tf.compat.v1.assign(global_step, global_step + 1)
+        learning_rate = tf.compat.v1.train.exponential_decay(lr, global_step, self.max_iter, decay, staircase=True)
 
-        optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, epsilon=.1)
+        optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate=learning_rate, epsilon=.1)
         train_step = optimizer.minimize(cost,global_step=global_step)
 
-        init = tf.global_variables_initializer()
+        init = tf.compat.v1.global_variables_initializer()
         # Clipping operation. This ensure that W and H learnt are non-negative
-        clip_W = W.assign(tf.maximum(tf.zeros_like(W), W))
-        clip_H = H.assign(tf.maximum(tf.zeros_like(H), H))
+        clip_W = tf.compat.v1.assign(W,tf.maximum(tf.zeros_like(W), W))
+        clip_H = tf.compat.v1.assign(H,tf.maximum(tf.zeros_like(H), H))
         clip = tf.group(clip_W, clip_H)
 
         c = np.inf
-        with tf.Session() as sess:
+        with tf.compat.v1.Session() as sess:
             sess.run(init)
             for i in range(self.max_iter):
                 sess.run(train_step)
@@ -125,7 +125,8 @@ class netNMFGD:
                     c2 = sess.run(cost)
                     e = c-c2
                     c = c2
-                    print(i,c,e)
+                    if i%10000==0:
+                        print(i,c,e)
                     if e < self.tol:
                         conv = True
                         break
@@ -200,12 +201,11 @@ class netNMFGD:
                 best_results = r
         if 'conv' not in best_results:
             warn("Did not converge after {} iterations. Error is {}. Try increasing `max_iter`.".format(self.max_iter, best_results['e']))
-        return best_results
+        return(best_results['W'],best_results['H'])
 
 
 
 # NMF code is adapted from from Non-negative matrix factorization in scikit=learn library
-# Copyright (c) 2007–2017 The scikit-learn developers.
 
 
 def norm(x):
