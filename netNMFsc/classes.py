@@ -68,6 +68,7 @@ class netNMFGD:
 
     def _fit(self, X):
         import tensorflow as tf
+        tf.compat.v1.disable_eager_execution()
         temp_H, temp_W = self._init(X)
         conv = False
 
@@ -76,21 +77,21 @@ class netNMFGD:
         A = tf.constant(X.astype(np.float32)) + eps
         H =  tf.Variable(temp_H.astype(np.float32))
         W = tf.Variable(temp_W.astype(np.float32))
-        print(np.max(mask),np.min(mask),np.sum(mask))
-        WH = tf.matmul(W, H) 
+        # print(np.max(mask),np.min(mask),np.sum(mask)) This produces a bug in 2.0, probably since we turned off eager execution
+        WH = tf.matmul(W, H)
         if self.weight < 1:
             WH = tf.multiply(mask,WH)
         WH += eps
         L_s = tf.constant(self.L.astype(np.float32))
         alpha_s = tf.constant(np.float32(self.alpha))
-        
+
 
         if self.distance == 'frobenius':
             cost0 = tf.reduce_sum(tf.pow(A - WH, 2))
             costL = alpha_s * tf.linalg.trace(tf.matmul(tf.transpose(W),tf.matmul(L_s,W)))
         elif self.distance == 'KL':
-            cost0 = tf.reduce_sum(tf.multiply(A ,tf.math.log(tf.div(A,WH)))-A+WH)
-            costL = alpha_s * tf.trace(tf.matmul(tf.transpose(W),tf.matmul(L_s,W)))
+            cost0 = tf.reduce_sum(tf.multiply(A ,tf.math.log(tf.compat.v1.div(A,WH)))-A+WH)
+            costL = alpha_s * tf.linalg.trace(tf.matmul(tf.transpose(W),tf.matmul(L_s,W)))
         else:
             raise ValueError('Select frobenius or KL for distance')
 
@@ -132,7 +133,7 @@ class netNMFGD:
                         break
             learnt_W = sess.run(W)
             learnt_H = sess.run(H)
-        tf.reset_default_graph()
+        tf.compat.v1.reset_default_graph()
 
         return {
             'conv': conv,
@@ -193,7 +194,7 @@ class netNMFGD:
             self.N = np.eye(X.shape[0])
             self.D = np.eye(X.shape[0])
             self.L = self.D - self.N
-        
+
         results = Parallel(n_jobs=self.n_jobs, backend=self.parallel_backend)(delayed(self._fit)(self.X) for x in range(self.n_inits))
         best_results = {"obj": np.inf, "H": None, "W": None}
         for r in results:
@@ -511,8 +512,8 @@ def _multiplicative_update_w(lam,N,D,X, W, H, beta_loss, l1_reg_W, l2_reg_W, gam
             np.divide(X_data, WH_safe_X_data, out=WH_safe_X_data)
             C = np.dot(W,W.T)
             numerator = safe_sparse_dot(WH_safe_X_data , H.T ) + lam * np.dot(N,W)
-            
-        
+
+
         elif beta_loss == 0:
             # speeds up computation time
             # refer to /numpy/numpy/issues/9363
@@ -804,8 +805,27 @@ class netNMFMU(BaseEstimator, TransformerMixin):
         self.l1_ratio = l1_ratio
         self.verbose = verbose
         self.shuffle = shuffle
+        self.sparsity = 0.5 # probably want to add this to the init
 
-    def fit_transform(self, lam,N,X, y=None, W=None, H=None):
+    def load_10X(self,direc=None,genome='mm10'):
+        if direc.endswith('hdf5') or direc.endswith('h5'):
+            X,genenames = utils.import_10X_hdf5(direc,genome)
+        else:
+            X,genenames = utils.import_10X_mtx(direc)
+        self.X = X
+        self.genes = genenames
+
+    def load_network(self,net=None,genenames=None,sparsity=.75):
+        if net:
+            if net.endswith('.txt'):
+                network,netgenes = utils.import_network_from_gene_pairs(net,genenames)
+            else:
+                network,netgenes = utils.import_network(net,genenames,sparsity)
+        network = utils.network_threshold(network,sparsity)
+        self.N = network
+        self.netgenes = netgenes
+
+    def fit_transform(self, lam=10, y=None, W=None, H=None):
         """Learn a NMF model for the data X and returns the transformed data.
 
         This is more efficient than calling fit followed by transform.
@@ -828,29 +848,37 @@ class netNMFMU(BaseEstimator, TransformerMixin):
         W : array, shape (n_samples, n_components)
             Transformed data.
         """
-        D = np.sum(abs(N),axis=0) * np.eye(N.shape[0])
-        N = np.dot(np.linalg.inv(D),N)
-        print(N.shape)
+        # if imported data from file reorder network to match genes in X
+        if type(self.genes) == np.ndarray and type(self.netgenes) == np.ndarray:
+            assert type(self.X) == np.ndarray
+            assert type(self.N) == np.ndarray
+            network = utils.reorder(self.genes,self.netgenes,self.N,self.sparsity)
+            self.N = network
+            self.netgenes = self.genes
+
+        D = (np.sum(abs(self.N),axis=0) + 1) * np.eye(self.N.shape[0]) # the + 1 is a hack to make sure it is invertible
+        self.N = np.dot(np.linalg.inv(D),self.N)
+        print(self.N.shape)
         D = np.eye(D.shape[0])
         print(D.shape)
-        X = check_array(X, accept_sparse=('csr', 'csc'), dtype=float)
+        self.X = check_array(self.X, accept_sparse=('csr', 'csc'), dtype=float)
 
-        W, H, n_iter_ = non_negative_factorization(lam=lam,N=N,D=D,
-            X=X, W=W, H=H, n_components=self.n_components, init=self.init,
+        W, H, n_iter_ = non_negative_factorization(lam=lam,N=self.N,D=D,
+            X=self.X, W=W, H=H, n_components=self.n_components, init=self.init,
             update_H=True, solver=self.solver, beta_loss=self.beta_loss,
             tol=self.tol, max_iter=self.max_iter, alpha=self.alpha,
             l1_ratio=self.l1_ratio, regularization='both',
             random_state=self.random_state, verbose=self.verbose,
             shuffle=self.shuffle)
 
-        self.reconstruction_err_ = _beta_divergence(lam,N,D,X, W, H, self.beta_loss,
+        self.reconstruction_err_ = _beta_divergence(lam,self.N,D,self.X, W, H, self.beta_loss,
                                                     square_root=True)
 
         self.n_components_ = H.shape[0]
         self.components_ = H
         self.n_iter_ = n_iter_
 
-        return W
+        return W,H
 
     def fit(self, lam,N,D,X, y=None, **params):
         """Learn a NMF model for the data X.

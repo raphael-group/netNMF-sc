@@ -16,8 +16,8 @@ def main(args):
         from .classes import netNMFGD
         operator = netNMFGD(d=args.dimensions, alpha=args.alpha, n_inits=1, tol=args.tol, max_iter=args.max_iters, n_jobs=1)
     elif args.method == 'MU':
-        from .classes import netNMFMU   
-        operator = netNMFMU(d=args.dimensions, alpha=args.alpha, n_inits=1, tol=args.tol, max_iter=args.max_iters, n_jobs=1)
+        from .classes import netNMFMU
+        operator = netNMFMU(n_components=args.dimensions, alpha=args.alpha, tol=args.tol, max_iter=args.max_iters)
     operator.load_10X(direc=args.tenXdir,genome='mm10')
     operator.load_network(net=args.network,genenames=args.netgenes,sparsity=args.sparsity)
     W, H = operator.fit_transform()
