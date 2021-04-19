@@ -16,9 +16,13 @@ python3 -m netNMFsc.run_netNMF-sc -x <path_to_10X_directory> --network netNMFsc/
 
 ### Command line arguments
     -x,--tenXdir, data is from 10X. Only required to provide directory containing matrix.mtx, genes.tsv, barcodes.tsv files or .hdf5 file
+    -f,--filename, path to data file (.npy or .mtx)
     -g,--gene_names, path to file containing gene names (.npy or .tsv)
     -net,--network, path to network file (.npy or .mtx)
     -netgenes,--netgenes, path to file containing gene names for network (.npy or .tsv)
+    -org,--organism, mouse or human
+    -id,--idtype, ensemble, symbol, or entrez
+    -netid,--netidtype, ensemble, symbol, or entrez
     -n,--normalize, normalize data? 1 = yes, 0 = no,default=1
     -sparse,--sparsity, sparsity for network,default=0.75
     -mi,--max_iters, max iters for netNMF,default=10000)
